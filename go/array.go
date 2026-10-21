@@ -5,94 +5,136 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Strarray struct {
 	data     []string
-	size     int
 	capacity int
+	length   int
 }
 
-func NewStrarray(initialCapacity int) *Strarray {
-	if initialCapacity <= 0 {
-		initialCapacity = 10
+// Конструктор
+func NewStrarray() *Strarray {
+	return &Strarray{
+		data:     make([]string, 10),
+		capacity: 10,
+		length:   0,
 	}
-	return &Strarray{data: make([]string, 0, initialCapacity), size: 0, capacity: initialCapacity}
 }
 
+// Изменение емкости
 func (arr *Strarray) resize(newCapacity int) {
-	if newCapacity <= arr.capacity {
-		return
-	}
-	newData := make([]string, arr.size, newCapacity)
-	copy(newData, arr.data)
+	newData := make([]string, newCapacity)
+	copy(newData, arr.data[:arr.length])
 	arr.data = newData
 	arr.capacity = newCapacity
 }
 
-func (arr *Strarray) MPUSH_end(element string) {
-	if arr.size >= arr.capacity {
+// Добавление в конец
+func (arr *Strarray) MPUSH_end(value string) {
+	if arr.length == arr.capacity {
 		arr.resize(arr.capacity * 2)
 	}
-	if len(arr.data) < arr.size+1 {
-		arr.data = append(arr.data, element)
-	} else {
-		arr.data[arr.size] = element
-	}
-	arr.size++
+	arr.data[arr.length] = value
+	arr.length++
 }
 
+// Добавление по индексу
+func (arr *Strarray) MPUSH_index(index int, value string) {
+	if index < 0 || index > arr.length {
+		fmt.Println("Ошибка: Индекс вне диапазона")
+		return
+	}
+	if arr.length == arr.capacity {
+		arr.resize(arr.capacity * 2)
+	}
+	// Сдвиг элементов вправо
+	for i := arr.length; i > index; i-- {
+		arr.data[i] = arr.data[i-1]
+	}
+	arr.data[index] = value
+	arr.length++
+}
+
+// Получение элемента по индексу
 func (arr *Strarray) MGET_index(index int) {
-	if index >= 0 && index < arr.size {
-		fmt.Println(arr.data[index])
+	if index < 0 || index >= arr.length {
+		fmt.Println("Ошибка: Индекс вне диапазона")
+		return
 	}
+	fmt.Println(arr.data[index])
 }
 
+// Удаление по индексу
+func (arr *Strarray) MDEL(index int) {
+	if index < 0 || index >= arr.length {
+		fmt.Println("Ошибка: Индекс вне диапазона")
+		return
+	}
+	// Сдвиг элементов влево
+	for i := index; i < arr.length-1; i++ {
+		arr.data[i] = arr.data[i+1]
+	}
+	arr.length--
+}
+
+// Замена элемента по индексу
+func (arr *Strarray) MREPLACE(index int, value string) {
+	if index < 0 || index >= arr.length {
+		fmt.Println("Ошибка: Индекс вне диапазона")
+		return
+	}
+	arr.data[index] = value
+}
+
+// Получение длины массива
+func (arr *Strarray) MSIZE() int {
+	return arr.length
+}
+
+// Чтение (вывод всех элементов)
 func (arr *Strarray) MREAD() {
-	for i := 0; i < arr.size; i++ {
-		fmt.Printf("%s ", arr.data[i])
+	for i := 0; i < arr.length; i++ {
+		fmt.Print(arr.data[i], " ")
 	}
 	fmt.Println()
 }
 
+// Сохранение в файл
 func (arr *Strarray) MSAVETOFILE(filename string) {
 	file, err := os.Create(filename)
 	if err != nil {
 		return
 	}
 	defer file.Close()
-	writer := bufio.NewWriter(file)
-	fmt.Fprintln(writer, arr.size) // Заменяет WriteString с конкатенацией
-	for i := 0; i < arr.size; i++ {
-		fmt.Fprintln(writer, arr.data[i])
+
+	file.WriteString(strconv.Itoa(arr.length) + "\n")
+	for i := 0; i < arr.length; i++ {
+		file.WriteString(arr.data[i] + "\n")
 	}
-	writer.Flush()
 }
 
+// Чтение из файла
 func (arr *Strarray) MREADFROMFILE(filename string) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return
 	}
 	defer file.Close()
+
+	arr.length = 0
 	scanner := bufio.NewScanner(file)
-	if !scanner.Scan() {
-		return
+
+	if scanner.Scan() {
+		count, err := strconv.Atoi(strings.TrimSpace(scanner.Text()))
+		if err == nil {
+			for i := 0; i < count && scanner.Scan(); i++ {
+				val := strings.TrimSpace(scanner.Text())
+				arr.MPUSH_end(val)
+			}
+		}
 	}
-	sz, err := strconv.Atoi(scanner.Text())
-	if err != nil {
-		return
-	}
-	arr.size = 0
-	if sz > arr.capacity {
-		arr.capacity = sz + 5
-		arr.data = make([]string, 0, arr.capacity)
-	}
-	for i := 0; i < sz && scanner.Scan(); i++ {
-		arr.MPUSH_end(scanner.Text())
-	}
-	// Проверка ошибки сканирования
 	if err := scanner.Err(); err != nil {
-		return
 	}
 }

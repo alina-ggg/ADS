@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 )
 
 type CBTNode struct {
@@ -14,45 +18,189 @@ type CompleteBinaryTree struct {
 	root *CBTNode
 }
 
+// Конструктор: инициализирует пустое дерево
+func NewCompleteBinaryTree() *CompleteBinaryTree {
+	return &CompleteBinaryTree{root: nil}
+}
+
+// Вставка нового значения с сохранением свойства полного бинарного дерева (по уровням)
 func (t *CompleteBinaryTree) Insert(value int) {
 	newNode := &CBTNode{data: value, left: nil, right: nil}
 	if t.root == nil {
 		t.root = newNode
 		return
 	}
-	queue := []*CBTNode{t.root}
-	for len(queue) > 0 {
-		curr := queue[0]
-		queue = queue[1:]
+
+	var q []*CBTNode
+	q = append(q, t.root)
+
+	for len(q) > 0 {
+		curr := q[0]
+		q = q[1:]
+
 		if curr.left == nil {
 			curr.left = newNode
 			return
 		} else {
-			queue = append(queue, curr.left)
+			q = append(q, curr.left)
 		}
+
 		if curr.right == nil {
 			curr.right = newNode
 			return
 		} else {
-			queue = append(queue, curr.right)
+			q = append(q, curr.right)
 		}
 	}
 }
 
-func (t *CompleteBinaryTree) PrintInOrderHelper(node *CBTNode) {
+// Рекурсивный подсчет общего количества узлов в дереве
+func (t *CompleteBinaryTree) countNodes(node *CBTNode) int {
+	if node == nil {
+		return 0
+	}
+	return 1 + t.countNodes(node.left) + t.countNodes(node.right)
+}
+
+// Вспомогательная рекурсивная функция для проверки полноты дерева по индексам
+func (t *CompleteBinaryTree) isCompleteUtil(node *CBTNode, index int, numberNodes int) bool {
+	if node == nil {
+		return true
+	}
+	if index >= numberNodes {
+		return false
+	}
+	return t.isCompleteUtil(node.left, 2*index+1, numberNodes) &&
+		t.isCompleteUtil(node.right, 2*index+2, numberNodes)
+}
+
+// Проверка, является ли дерево полным бинарным деревом
+func (t *CompleteBinaryTree) IsComplete() bool {
+	nodeCount := t.countNodes(t.root)
+	return t.isCompleteUtil(t.root, 0, nodeCount)
+}
+
+// Поиск значения в дереве обходом в ширину (BFS)
+func (t *CompleteBinaryTree) Search(value int) bool {
+	if t.root == nil {
+		return false
+	}
+
+	var q []*CBTNode
+	q = append(q, t.root)
+
+	for len(q) > 0 {
+		curr := q[0]
+		q = q[1:]
+
+		if curr.data == value {
+			return true
+		}
+		if curr.left != nil {
+			q = append(q, curr.left)
+		}
+		if curr.right != nil {
+			q = append(q, curr.right)
+		}
+	}
+	return false
+}
+
+// Рекурсивный помощник для удаления узлов (post-order)
+func (t *CompleteBinaryTree) clearHelper(node *CBTNode) {
 	if node != nil {
-		t.PrintInOrderHelper(node.left)
-		fmt.Printf("%d ", node.data)
-		t.PrintInOrderHelper(node.right)
+		t.clearHelper(node.left)
+		t.clearHelper(node.right)
 	}
 }
 
-func (t *CompleteBinaryTree) PrintInOrder() {
+// Полная очистка дерева
+func (t *CompleteBinaryTree) Clear() {
+	t.clearHelper(t.root)
+	t.root = nil
+}
+
+// Сохранение дерева в файл по уровням (BFS), чтобы сохранить исходную структуру
+func (t *CompleteBinaryTree) SaveToFile(filename string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	if t.root == nil {
+		return
+	}
+
+	var q []*CBTNode
+	q = append(q, t.root)
+
+	for len(q) > 0 {
+		curr := q[0]
+		q = q[1:]
+
+		file.WriteString(strconv.Itoa(curr.data) + "\n")
+
+		if curr.left != nil {
+			q = append(q, curr.left)
+		}
+		if curr.right != nil {
+			q = append(q, curr.right)
+		}
+	}
+}
+
+// Загрузка дерева из файла
+func (t *CompleteBinaryTree) LoadFromFile(filename string) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	t.Clear()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			val, err := strconv.Atoi(line)
+			if err == nil {
+				t.Insert(val)
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+	}
+}
+
+// Наглядный вывод дерева по уровням
+func (t *CompleteBinaryTree) PrintLevelOrder() {
 	if t.root == nil {
 		fmt.Println("Tree is empty")
 		return
 	}
-	fmt.Print("In-order traversal: ")
-	t.PrintInOrderHelper(t.root)
-	fmt.Println()
+
+	fmt.Println("Tree structure (Level by level):")
+	var q []*CBTNode
+	q = append(q, t.root)
+
+	for len(q) > 0 {
+		levelSize := len(q)
+		var levelValues []string
+
+		for i := 0; i < levelSize; i++ {
+			curr := q[0]
+			q = q[1:]
+
+			levelValues = append(levelValues, strconv.Itoa(curr.data))
+
+			if curr.left != nil {
+				q = append(q, curr.left)
+			}
+			if curr.right != nil {
+				q = append(q, curr.right)
+			}
+		}
+		fmt.Println(strings.Join(levelValues, " "))
+	}
 }
