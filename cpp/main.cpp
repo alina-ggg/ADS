@@ -10,31 +10,25 @@
 #include "queue.h"
 #include "complete_binary_tree.h"
 
-// вспомогательная функция для разделения строки запроса на отдельные слова (токены) по пробелам.
-// пример: строка "MPUSH_end users alina" -> вектор слов: ["MPUSH_end", "users", "alina"]
 std::vector<std::string> splitQuery(const std::string& query) {
-    std::vector<std::string> tokens; // динамический массив для хранения слов
-    std::stringstream ss(query);      // строковый поток из переданного запроса
+    std::vector<std::string> tokens;
+    std::stringstream ss(query);
     std::string word;
-    
     while (ss >> word) {
-        tokens.push_back(word);      // добавление слова в список токенов
+        tokens.push_back(word);
     }
     return tokens;
 }
 
-// argc — количество аргументов, argv — сами аргументы из командной строки
 int main(int argc, char* argv[]) {
-    // проверка на кол-во параметров, которые передал пользователь
     if (argc < 5) {
-        std::cout << "Usage: ./program --file <filename> --query \"<COMMAND>\"\n";
+        std::cout << "Usage: ./dbms --file <filename> --query \"<COMMAND> <NAME> [args]\"\n";
         return 1;
     }
 
     std::string filename = "";
     std::string query = "";
-    // цикл для разбора аргументов командной строки, которые вводит пользователь
-    for (int i = 1;i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "--file" && i + 1 < argc) {
             filename = argv[i + 1];
@@ -43,10 +37,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << "Файл базы данных: " << filename << "\n";
-    std::cout << "Выполняемый запрос: " << query << "\n";
-
-    // строку запроса -> набор отдельных слов-токенов
     std::vector<std::string> tokens = splitQuery(query);
     if (tokens.empty()) {
         std::cout << "Ошибка: Пустой запрос.\n";
@@ -54,85 +44,209 @@ int main(int argc, char* argv[]) {
     }
 
     std::string command = tokens[0];
+    // tokens[1] — это имя структуры (mystack, myarray, mytree)
 
-    // Обработка команд для Массива (M)
-    if (command == "MPUSH" && tokens.size() >= 2) {
+    // массив (M)
+    if (command == "MPUSH" && tokens.size() >= 3) {
         Strarray arr;
         arr.MREADFROMFILE(filename);
-        arr.MPUSH_end(tokens[1]);
+        if (tokens.size() >= 5 && tokens[2] == "index") {
+            arr.MPUSH_index(std::stoi(tokens[3]), tokens[4]);
+        } else {
+            arr.MPUSH_end(tokens[2]);
+        }
         arr.MSAVETOFILE(filename);
     }
-    else if (command == "MGET" && tokens.size() >= 2) {
+    else if (command == "MGET" && tokens.size() >= 3) {
         Strarray arr;
         arr.MREADFROMFILE(filename);
-        arr.MGET_index(std::stoi(tokens[1]));
+        arr.MGET_index(std::stoi(tokens[2]));
     }
-// Обработка команд для Односвязного списка (F)
-    else if (command == "FPUSH" && tokens.size() >= 2) {
+    else if (command == "MDEL" && tokens.size() >= 3) {
+        Strarray arr;
+        arr.MREADFROMFILE(filename);
+        arr.MDEL(std::stoi(tokens[2]));
+        arr.MSAVETOFILE(filename);
+    }
+    else if (command == "MREPLACE" && tokens.size() >= 4) {
+        Strarray arr;
+        arr.MREADFROMFILE(filename);
+        arr.MREPLACE(std::stoi(tokens[2]), tokens[3]);
+        arr.MSAVETOFILE(filename);
+    }
+    else if (command == "MSIZE" && tokens.size() >= 2) {
+        Strarray arr;
+        arr.MREADFROMFILE(filename);
+        std::cout << arr.MSIZE() << "\n";
+    }
+    else if (command == "MREAD" && tokens.size() >= 2) {
+        Strarray arr;
+        arr.MREADFROMFILE(filename);
+        arr.MREAD();
+    }
+
+    // односвязный список (F)
+    else if (command == "FPUSH" && tokens.size() >= 3) {
         Node* head = FLOAD(filename);
-        head = FPUSHHEAD(head, tokens[1]);
+        if (tokens.size() >= 4 && tokens[2] == "tail") {
+            head = FPUSHTAIL(head, tokens[3]);
+        } else if (tokens.size() >= 5 && tokens[2] == "before") {
+            head = FPUSHBEFORE(head, tokens[3], tokens[4]);
+        } else if (tokens.size() >= 5 && tokens[2] == "after") {
+            head = FPUSHAFTER(head, tokens[3], tokens[4]);
+        } else {
+            head = FPUSHHEAD(head, tokens[2]);
+        }
         FSAVETOFILE(head, filename);
     }
-    else if (command == "FSEARCH" && tokens.size() >= 2) {
+    else if (command == "FDEL" && tokens.size() >= 3) {
         Node* head = FLOAD(filename);
-        FSEARCH(head, tokens[1]);
+        if (tokens[2] == "head") {
+            head = FDELHEAD(head);
+        } else if (tokens[2] == "tail") {
+            head = FDELTAIL(head);
+        } else {
+            head = FDELVALUE(head, tokens[2]);
+        } 
+        FSAVETOFILE(head, filename);
     }
-
-    // Обработка команд для Двусвязного списка (L)
-    else if (command == "LPUSH" && tokens.size() >= 2) {
+    else if (command == "FSEARCH" && tokens.size() >= 3) {
+        Node* head = FLOAD(filename);
+        FSEARCH(head, tokens[2]);
+    }
+    else if (command == "FDELAFTER" && tokens.size() >= 3) {
+        Node* head = FLOAD(filename);
+        head = FDELAFTER(head, tokens[2]);
+        FSAVETOFILE(head, filename);
+    }
+    else if (command == "FDELBEFORE" && tokens.size() >= 3) {
+        Node* head = FLOAD(filename);
+        head = FDELBEFORE(head, tokens[2]);
+        FSAVETOFILE(head, filename);
+    }
+    // двусвязный список (L)
+    else if (command == "LPUSH" && tokens.size() >= 3) {
         DNode* head = LLOAD(filename);
-        head = LPUSHHEAD(head, tokens[1]);
+        DNode* tail = head;
+        if (tokens.size() >= 4 && tokens[2] == "tail") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) {
+                    tail = tail->next;
+                }
+            }
+            LPUSHTAIL(head, tail, tokens[3]);
+        } else if (tokens.size() >= 5 && tokens[2] == "before") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) tail = tail->next;
+            }
+            head = LPUSHBEFORE(head, tail, tokens[3], tokens[4]);
+        } else if (tokens.size() >= 5 && tokens[2] == "after") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) {
+                    tail = tail->next;
+                }
+            }
+            head = LPUSHAFTER(head, tail, tokens[3], tokens[4]);
+        } else {
+            head = LPUSHHEAD(head, tail, tokens[2]);
+        }
         LSAVETOFILE(head, filename);
     }
+    else if (command == "LDEL" && tokens.size() >= 3) {
+        DNode* head = LLOAD(filename);
+        if (tokens.size() >= 3 && tokens[2] == "head") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) tail = tail->next;
+            }
+            head = LDELHEAD(head, tail);
+        } else if (tokens[2] == "tail") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) {
+                    tail = tail->next;
+                }
+            }
+            head = LDELTAIL(head, tail);
+        } else if (tokens.size() >= 4 && tokens[2] == "value") {
+            DNode* tail = head;
+            if (tail) {
+                while (tail->next) tail = tail->next;
+            }
+            head = LDELVALUE(head, tail, tokens[3]);
+        }
+        LSAVETOFILE(head, filename);
+    }
+    else if (command == "LSEARCH" && tokens.size() >= 3) {
+        DNode* head = LLOAD(filename);
+        LSEARCH(head, tokens[2]);
+    }
+    
 
-    // Обработка команд для Стека (S)
-    else if (command == "SPUSH" && tokens.size() >= 2) {
+    // стек (S) 
+    else if (command == "SPUSH" && tokens.size() >= 3) {
         Stack st;
         st.loadFromFile(filename);
-        st.push(tokens[1]);
+        st.push(tokens[2]);
         st.saveToFile(filename);
     }
-    else if (command == "SPOP") {
+    else if (command == "SPOP" && tokens.size() >= 2) {
         Stack st;
         st.loadFromFile(filename);
-        std::cout << st.pop() << "\n";
+        std::string val = st.pop();
+        std::cout << "-> " << val << "\n";
         st.saveToFile(filename);
     }
 
-    // Обработка команд для Очереди (Q)
-    else if (command == "QPUSH" && tokens.size() >= 2) {
+    // очередь (Q)
+    else if (command == "QPUSH" && tokens.size() >= 3) {
         Queue q;
         q.LOADFROMFILE(filename);
-        q.SPUSH(tokens[1]);
+        q.SPUSH(tokens[2]);
         q.SAVETOFILE(filename);
     }
-    else if (command == "QPOP") {
+    else if (command == "QPOP" && tokens.size() >= 2) {
         Queue q;
         q.LOADFROMFILE(filename);
-        std::cout << q.SPOP() << "\n";
+        std::string val = q.SPOP();
+        std::cout << "-> " << val << "\n";
         q.SAVETOFILE(filename);
     }
 
-    // Обработка команд для Дерева (T — Complete Binary Tree, Вариант 3)[cite: 4]
-    else if (command == "TINSERT" && tokens.size() >= 2) {
+    // дерево (Complete Binary Tree - T)
+    else if (command == "TINSERT" && tokens.size() >= 3) {
         CompleteBinaryTree tree;
         tree.loadFromFile(filename);
-        tree.insert(std::stoi(tokens[1]));
+        tree.insert(std::stoi(tokens[2])); // tokens[1] - имя дерева, tokens[2] - число
         tree.saveToFile(filename);
     }
-    else if (command == "TCHECK") {
+    else if ((command == "TSEARCH" || command == "ISMEMBER") && tokens.size() >= 3) {
+        CompleteBinaryTree tree;
+        tree.loadFromFile(filename);
+        if (tree.search(std::stoi(tokens[2]))) {
+            std::cout << "-> TRUE\n";
+        } else {
+            std::cout << "-> FALSE\n";
+        }
+    }
+    else if (command == "TCHECK" && tokens.size() >= 2) {
         CompleteBinaryTree tree;
         tree.loadFromFile(filename);
         if (tree.isComplete()) {
-            std::cout << "TRUE\n";
+            std::cout << "-> TRUE\n";
         } else {
-            std::cout << "FALSE\n";
+            std::cout << "-> FALSE\n";
         }
     }
 
-    // Универсальная печать структуры PRINT <тип>[cite: 4]
-    else if (command == "PRINT" && tokens.size() >= 2) {
+    // универсальный вывод (PRINT)
+    // PRINT M myarray 
+    else if (command == "PRINT" && tokens.size() >= 3) {
         std::string type = tokens[1];
+        // tokens[2] — имя структуры
         if (type == "M") {
             Strarray arr;
             arr.MREADFROMFILE(filename);
@@ -158,7 +272,7 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        std::cout << "Неизвестная команда.\n";
+        std::cout << "Неизвестная команда или неверные аргументы.\n";
     }
 
     return 0;

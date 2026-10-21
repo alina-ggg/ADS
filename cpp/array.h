@@ -2,31 +2,28 @@
 #define ARRAY_H
 
 #include <string>
-#include <fstream>
 
 class Strarray {
 private:
-    std::string* data; // Указатель на динамический массив в памяти
-    int capacity;      // Общая выделенная емкость массива
-    int size;          // Текущее количество элементов в массиве
-    void resize(int newCapacity); // Метод автоматического расширения памяти
+    std::string* data;
+    int capacity;
+    int length;
+
+    void resize(int new_capacity);
 
 public:
     Strarray();
     ~Strarray();
-    Strarray(const Strarray& other);
-    Strarray& operator=(const Strarray& other);
 
-    void MCREATE(int initialCapacity);
-    void MPUSH_end(const std::string& element);
-    void MPUSH_index(int index, const std::string& element);
-    void MGET_index(int index);
+    void MPUSH_end(const std::string& value);
+    void MPUSH_index(int index, const std::string& value);
+    void MGET_index(int index) const;
     void MDEL(int index);
-    void MREPLACE(int index, const std::string& newelement);
-    int MSIZE();
-    void MREAD();
-    void clear();
-    void MSAVETOFILE(const std::string& filename);
+    void MREPLACE(int index, const std::string& value);
+    int MSIZE() const;
+    void MREAD() const;
+
+    void MSAVETOFILE(const std::string& filename) const;
     void MREADFROMFILE(const std::string& filename);
 };
 

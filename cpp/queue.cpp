@@ -1,53 +1,70 @@
 #include "queue.h"
+#include <fstream>
+#include <iostream>
 
-// Конструктор: инициализирует пустую очередь (front и rear равны nullptr)
-Queue::Queue() : front(nullptr), rear(nullptr) {}
+Queue::Queue() : head(nullptr), tail(nullptr) {}
 
-// Деструктор: очищает очередь, удаляя все оставшиеся элементы
-Queue::~Queue() { while (!ISEMPTY()) SPOP(); }
-
-// Добавление элемента в конец очереди (enqueue / SPUSH)
-void Queue::SPUSH(const std::string& value) {
-    QueueNode* newNode = new QueueNode{value, nullptr};
-    if (rear) rear->next = newNode;
-    rear = newNode;
-    if (!front) front = rear;
+Queue::~Queue() {
+    while (!ISEMPTY()) {
+        SPOP();
+    }
 }
 
-// Удаление и возвращение элемента из начала очереди (dequeue / SPOP)
+void Queue::SPUSH(const std::string& value) {
+    QNode* newNode = new QNode{value, nullptr};
+    if (tail) {
+        tail->next = newNode;
+        tail = newNode;
+    } else {
+        head = tail = newNode;
+    }
+}
+
 std::string Queue::SPOP() {
     if (ISEMPTY()) return "";
-    QueueNode* temp = front;
-    std::string val = front->data;
-    front = front->next;
-    if (!front) rear = nullptr;
+    QNode* temp = head;
+    std::string val = head->data;
+    head = head->next;
+    if (!head) {
+        tail = nullptr;
+    }
     delete temp;
     return val;
 }
 
-// Проверка очереди на пустоту
-bool Queue::ISEMPTY() const { return front == nullptr; }
+bool Queue::ISEMPTY() const {
+    return head == nullptr;
+}
 
-// Вывод всех элементов очереди в консоль (от начала к концу)
 void Queue::PRINT() const {
-    QueueNode* curr = front;
-    while (curr) { std::cout << curr->data << " "; curr = curr->next; }
+    QNode* curr = head;
+    while (curr) {
+        std::cout << curr->data << " ";
+        curr = curr->next;
+    }
     std::cout << std::endl;
 }
 
-// Сохранение элементов очереди в текстовый файл
 void Queue::SAVETOFILE(const std::string& filename) const {
     std::ofstream file(filename);
-    QueueNode* curr = front;
-    while (curr) { file << curr->data << "\n"; curr = curr->next; }
+    if (!file.is_open()) return;
+    QNode* curr = head;
+    while (curr) {
+        file << curr->data << "\n";
+        curr = curr->next;
+    }
 }
 
-// Загрузка элементов очереди из текстового файла
 void Queue::LOADFROMFILE(const std::string& filename) {
     std::ifstream file(filename);
+    if (!file.is_open()) return;
+    while (!ISEMPTY()) {
+        SPOP();
+    }
     std::string line;
-    while (!ISEMPTY()) SPOP();
     while (getline(file, line)) {
-        if (!line.empty()) SPUSH(line);
+        if (!line.empty()) {
+            SPUSH(line);
+        }
     }
 }

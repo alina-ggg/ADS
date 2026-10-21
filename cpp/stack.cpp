@@ -1,17 +1,20 @@
 #include "stack.h"
+#include <fstream>
+#include <iostream>
+#include <vector>
 
-// Конструктор: инициализирует пустой стек (указатель top равен nullptr)
 Stack::Stack() : top(nullptr) {}
 
-// Деструктор: очищает стек, удаляя все оставшиеся узлы
-Stack::Stack::~Stack() { while (!isEmpty()) pop(); }
+Stack::~Stack() {
+    while (!isEmpty()) {
+        pop();
+    }
+}
 
-// Добавление элемента на вершину стека (push)
 void Stack::push(const std::string& value) {
     top = new StackNode{value, top};
 }
 
-// Удаление и возвращение элемента с вершины стека (pop)
 std::string Stack::pop() {
     if (isEmpty()) return "";
     StackNode* temp = top;
@@ -21,29 +24,46 @@ std::string Stack::pop() {
     return val;
 }
 
-// Проверка стека на пустоту
-bool Stack::isEmpty() const { return top == nullptr; }
+bool Stack::isEmpty() const {
+    return top == nullptr;
+}
 
-// Вывод всех элементов стека в консоль (начиная с вершины)
 void Stack::print() const {
     StackNode* curr = top;
-    while (curr) { std::cout << curr->data << " "; curr = curr->next; }
+    while (curr) {
+        std::cout << curr->data << " ";
+        curr = curr->next;
+    }
     std::cout << std::endl;
 }
 
-// Сохранение элементов стека в текстовый файл
 void Stack::saveToFile(const std::string& filename) const {
     std::ofstream file(filename);
+    if (!file.is_open()) return;
     StackNode* curr = top;
-    while (curr) { file << curr->data << "\n"; curr = curr->next; }
+    while (curr) {
+        file << curr->data << "\n";
+        curr = curr->next;
+    }
 }
 
-// Загрузка элементов стека из текстового файла
 void Stack::loadFromFile(const std::string& filename) {
     std::ifstream file(filename);
+    if (!file.is_open()) return;
+
+    while (!isEmpty()) {
+        pop();
+    }
+
+    std::vector<std::string> lines;
     std::string line;
-    while (!isEmpty()) pop();
     while (getline(file, line)) {
-        if (!line.empty()) push(line);
+        if (!line.empty()) {
+            lines.push_back(line);
+        }
+    }
+
+    for (int i = static_cast<int>(lines.size()) - 1; i >= 0; --i) {
+        push(lines[i]);
     }
 }

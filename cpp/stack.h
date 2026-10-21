@@ -2,8 +2,6 @@
 #define STACK_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
 
 struct StackNode {
     std::string data;
@@ -12,8 +10,7 @@ struct StackNode {
 
 class Stack {
 private:
-    StackNode* top; // Указатель на вершину стека (LIFO)
-
+    StackNode* top;
 public:
     Stack();
     ~Stack();

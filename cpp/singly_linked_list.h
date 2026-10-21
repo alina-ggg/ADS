@@ -2,21 +2,27 @@
 #define SINGLY_LINKED_LIST_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
 
 struct Node {
-    std::string person; // Строковые данные узла
-    Node* next;         // Указатель на следующий элемент списка
+    std::string data;
+    Node* next;
 };
 
-void FSAVETOFILE(Node* ptr, const std::string& filename);
+Node* FPUSHHEAD(Node* head, const std::string& value);
+Node* FPUSHTAIL(Node* head, const std::string& value);
+Node* FPUSHBEFORE(Node* head, const std::string& target, const std::string& value);
+Node* FPUSHAFTER(Node* head, const std::string& target, const std::string& value);
+
+Node* FDELHEAD(Node* head);
+Node* FDELTAIL(Node* head);
+Node* FDELVALUE(Node* head, const std::string& value);
+Node* FDELBEFORE(Node* head, const std::string& target);
+Node* FDELAFTER(Node* head, const std::string& target);
+
+void FSEARCH(Node* head, const std::string& value);
+void print(Node* head);
+
+void FSAVETOFILE(Node* head, const std::string& filename);
 Node* FLOAD(const std::string& filename);
-Node* FCREATE(std::string key);
-void FSEARCH(Node* ptr, std::string targetvalue);
-Node* FPUSHHEAD(Node* ptr, std::string key);
-Node* FPUSHTAIL(Node* ptr, std::string key);
-void print(Node* fList);
-int getSize(Node* ptr);
 
 #endif

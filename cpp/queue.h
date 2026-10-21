@@ -2,24 +2,21 @@
 #define QUEUE_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
 
-struct QueueNode {
+struct QNode {
     std::string data;
-    QueueNode* next;
+    QNode* next;
 };
 
 class Queue {
 private:
-    QueueNode* front; // Начало очереди (для извлечения)
-    QueueNode* rear;  // Конец очереди (для вставки, FIFO)
-
+    QNode* head;
+    QNode* tail;
 public:
     Queue();
     ~Queue();
-    void SPUSH(const std::string& value);
-    std::string SPOP();
+    void SPUSH(const std::string& value); // Добавление в хвост
+    std::string SPOP();                 // Удаление из головы
     bool ISEMPTY() const;
     void PRINT() const;
     void SAVETOFILE(const std::string& filename) const;

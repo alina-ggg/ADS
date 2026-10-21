@@ -57,7 +57,7 @@ bool CompleteBinaryTree::search(int value) const {
     return false;
 }
 
-// Рекурсивный помощник для удаления узлов (реверсивный обход / post-order)
+// Рекурсивный помощник для удаления узлов (post-order)
 void CompleteBinaryTree::clearHelper(CBTNode* node) {
     if (node) {
         clearHelper(node->left);
@@ -72,18 +72,19 @@ void CompleteBinaryTree::clear() {
     root = nullptr;
 }
 
-// Сохранение дерева в файл
+// Сохранение дерева в файл по уровням (BFS), чтобы сохранить исходную структуру
 void CompleteBinaryTree::saveToFile(const std::string& filename) const {
     std::ofstream file(filename);
-    saveToFileHelper(root, file);
-}
-
-// Вспомогательная функция сохранения в файл (симметричный обход)
-void CompleteBinaryTree::saveToFileHelper(CBTNode* node, std::ofstream& file) const {
-    if (node) {
-        saveToFileHelper(node->left, file);
-        file << node->data << "\n";
-        saveToFileHelper(node->right, file);
+    if (!file.is_open() || !root) return;
+    
+    std::queue<CBTNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        CBTNode* curr = q.front();
+        q.pop();
+        file << curr->data << "\n";
+        if (curr->left) q.push(curr->left);
+        if (curr->right) q.push(curr->right);
     }
 }
 
@@ -106,13 +107,27 @@ void CompleteBinaryTree::printInOrderHelper(CBTNode* node) const {
     }
 }
 
-// Вывод симметричного обхода дерева в консоль
 void CompleteBinaryTree::printInOrder() const {
     if (!root) {
         std::cout << "Tree is empty\n";
         return;
     }
-    std::cout << "In-order traversal: ";
-    printInOrderHelper(root);
-    std::cout << std::endl;
+    
+    std::cout << "Tree structure (Level by level):\n";
+    std::queue<CBTNode*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        int levelSize = q.size(); // Количество узлов на текущем уровне
+        for (int i = 0; i < levelSize; ++i) {
+            CBTNode* curr = q.front();
+            q.pop();
+            
+            std::cout << curr->data << " ";
+            
+            if (curr->left) q.push(curr->left);
+            if (curr->right) q.push(curr->right);
+        }
+        std::cout << std::endl; // Перевод строки для каждого нового уровня дерева
+    }
 }

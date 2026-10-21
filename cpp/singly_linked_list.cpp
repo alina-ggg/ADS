@@ -1,53 +1,122 @@
 #include "singly_linked_list.h"
+#include <iostream>
+#include <fstream>
 
-// Сохранение односвязного списка в файл построчно
-void FSAVETOFILE(Node* ptr, const std::string& filename) {
-    std::ofstream file(filename);
-    while (ptr != nullptr) {
-        file << ptr->person << "\n";
-        ptr = ptr->next;
-    }
+Node* FPUSHHEAD(Node* head, const std::string& value) {
+    return new Node{value, head};
 }
 
-// Загрузка односвязного списка из файла с сохранением порядка элементов
-Node* FLOAD(const std::string& filename) {
-    std::ifstream file(filename);
-    Node* head = nullptr;
-    Node* tail = nullptr;
-    std::string line;
-    while (getline(file, line)) {
-        if (!line.empty()) {
-            Node* newNode = new Node{line, nullptr};
-            if (!head) head = tail = newNode;
-            else { tail->next = newNode; tail = newNode; }
-        }
+Node* FPUSHTAIL(Node* head, const std::string& value) {
+    Node* newNode = new Node{value, nullptr};
+    if (!head) return newNode;
+    Node* curr = head;
+    while (curr->next) curr = curr->next;
+    curr->next = newNode;
+    return head;
+}
+
+Node* FPUSHBEFORE(Node* head, const std::string& target, const std::string& value) {
+    if (!head) return nullptr;
+    if (head->data == target) return FPUSHHEAD(head, value);
+    Node* curr = head;
+    while (curr->next && curr->next->data != target) {
+        curr = curr->next;
+    }
+    if (curr->next) {
+        curr->next = new Node{value, curr->next};
     }
     return head;
 }
 
-// Создание нового узла односвязного списка с заданным значением
-Node* FCREATE(std::string key) { return new Node{key, nullptr}; }
-
-// Вставка нового узла в начало списка (в голову)
-Node* FPUSHHEAD(Node* ptr, std::string key) { return new Node{key, ptr}; }
-
-// Вставка нового узла в конец списка (в хвост)
-Node* FPUSHTAIL(Node* ptr, std::string key) {
-    Node* newNode = new Node{key, nullptr};
-    if (!ptr) return newNode;
-    Node* curr = ptr;
-    while (curr->next) curr = curr->next;
-    curr->next = newNode;
-    return ptr;
+Node* FPUSHAFTER(Node* head, const std::string& target, const std::string& value) {
+    Node* curr = head;
+    while (curr && curr->data != target) {
+        curr = curr->next;
+    }
+    if (curr) {
+        curr->next = new Node{value, curr->next};
+    }
+    return head;
 }
 
-// Поиск элемента по значению с выводом его позиции в консоль
-void FSEARCH(Node* ptr, std::string targetvalue) {
-    Node* curr = ptr;
+Node* FDELHEAD(Node* head) {
+    if (!head) return nullptr;
+    Node* temp = head->next;
+    delete head;
+    return temp;
+}
+
+Node* FDELTAIL(Node* head) {
+    if (!head) return nullptr;
+    if (!head->next) {
+        delete head;
+        return nullptr;
+    }
+    Node* curr = head;
+    while (curr->next->next) {
+        curr = curr->next;
+    }
+    delete curr->next;
+    curr->next = nullptr;
+    return head;
+}
+
+Node* FDELVALUE(Node* head, const std::string& value) {
+    if (!head) return nullptr;
+    if (head->data == value) return FDELHEAD(head);
+    Node* curr = head;
+    while (curr->next && curr->next->data != value) {
+        curr = curr->next;
+    }
+    if (curr->next) {
+        Node* temp = curr->next;
+        curr->next = curr->next->next;
+        delete temp;
+    }
+    return head;
+}
+
+// Удаление узла, стоящего до целевого значения
+Node* FDELBEFORE(Node* head, const std::string& target) {
+    if (!head || !head->next) return head;
+
+    if (head->next->data == target) {
+        return FDELHEAD(head);
+    }
+
+    Node* curr = head;
+    while (curr->next && curr->next->next) {
+        if (curr->next->next->data == target) {
+            Node* temp = curr->next;
+            curr->next = curr->next->next;
+            delete temp;
+            return head;
+        }
+        curr = curr->next;
+    }
+    return head;
+}
+
+Node* FDELAFTER(Node* head, const std::string& target) {
+    Node* curr = head;
+    while (curr && curr->data != target) {
+        curr = curr->next;
+    }
+
+    if (curr && curr->next) {
+        Node* temp = curr->next;
+        curr->next = curr->next->next;
+        delete temp;
+    }
+    return head;
+}
+
+void FSEARCH(Node* head, const std::string& value) {
+    Node* curr = head;
     int pos = 0;
-    while (curr != nullptr) {
-        if (curr->person == targetvalue) {
-            std::cout << "Элемент найден на позиции: " << pos << std::endl;
+    while (curr) {
+        if (curr->data == value) {
+            std::cout << "Элемент найден на позиции: " << pos << "\n";
             return;
         }
         curr = curr->next;
@@ -56,18 +125,38 @@ void FSEARCH(Node* ptr, std::string targetvalue) {
     std::cout << "Элемент не найден\n";
 }
 
-// Вывод всех элементов списка в консоль
-void print(Node* fList) {
-    while (fList) {
-        std::cout << fList->person << " ";
-        fList = fList->next;
+void print(Node* head) {
+    Node* curr = head;
+    while (curr) {
+        std::cout << curr->data << " ";
+        curr = curr->next;
     }
-    std::cout << std::endl;
+    std::cout << "\n";
 }
 
-// Подсчет и возвращение количества узлов в списке
-int getSize(Node* ptr) {
-    int cnt = 0;
-    while (ptr) { cnt++; ptr = ptr->next; }
-    return cnt;
+void FSAVETOFILE(Node* head, const std::string& filename) {
+    std::ofstream file(filename);
+    Node* curr = head;
+    while (curr) {
+        file << curr->data << "\n";
+        curr = curr->next;
+    }
+}
+
+Node* FLOAD(const std::string& filename) {
+    std::ifstream file(filename);
+    std::string line;
+    Node* head = nullptr;
+    Node* tail = nullptr;
+    while (getline(file, line)) {
+        if (!line.empty()) {
+            Node* newNode = new Node{line, nullptr};
+            if (!head) head = tail = newNode;
+            else {
+                tail->next = newNode;
+                tail = newNode;
+            }
+        }
+    }
+    return head;
 }
